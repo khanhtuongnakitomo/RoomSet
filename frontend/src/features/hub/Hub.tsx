@@ -1,7 +1,8 @@
 // The doorway after "Try": two full-height rooms to walk into. Every part of the product starts here.
 
 import { ArrowUpRight, Box, Compass, Move, Ruler, ScanEye, ScanLine, Sofa, type LucideIcon } from "lucide-react";
-import { useEffect, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { api } from "../../api/client";
 import { navigate } from "../../app/nav";
 import { loadAuth } from "../../app/sessionStore";
 import "./hub.css";
@@ -56,6 +57,11 @@ function warmStudio() {
 
 export function Hub() {
   const hasPlan = Boolean(loadAuth());
+  // A static preview has no server, so the second door opens the fit demo instead of the planner.
+  const [hasServer, setHasServer] = useState(true);
+  useEffect(() => {
+    api.capabilities().catch(() => setHasServer(false));
+  }, []);
   useEffect(() => {
     const timer = setTimeout(warmStudio, WARM_AFTER_MS);
     return () => clearTimeout(timer);
@@ -83,15 +89,15 @@ export function Hub() {
           action="Enter the apartment"
         />
         <Door
-          href="/app"
+          href={hasServer ? "/app" : "/demo"}
           image="/landing/hero-lounge.webp"
           alt="A bright lounge with armchairs, a sofa and a chandelier"
           index="02"
           kicker="Your room"
           title={<>Plan <em>your</em><br /><em>own</em> space</>}
-          body={hasPlan ? "Your plan is saved on this device." : "Your sofa, your room, your layout."}
-          points={[[Sofa, "Confirm a sofa"], [ScanLine, "Show the room"], [Ruler, "Check the fit"]]}
-          action={hasPlan ? "Continue your plan" : "Start a plan"}
+          body={!hasServer ? "Will it fit? See it in 60 seconds." : hasPlan ? "Your plan is saved on this device." : "Your furniture, your room, your layout."}
+          points={[[Sofa, "Confirm the piece"], [ScanLine, "Show the room"], [Ruler, "Check the fit"]]}
+          action={!hasServer ? "Try the fit demo" : hasPlan ? "Continue your plan" : "Start a plan"}
         />
       </main>
     </div>

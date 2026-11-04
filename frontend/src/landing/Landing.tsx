@@ -1,7 +1,7 @@
 // Hero, problem, approach, features, stack, comparison, team.
 
 import Lenis from "lenis";
-import { ArrowUpRight, Box, Check, Compass, Eye, Gauge, Layers, LayoutGrid, Minus, Move, Ruler, ShieldCheck, X, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Box, Check, Compass, Eye, Gauge, Layers, LayoutGrid, Minus, Move, Ruler, ShieldCheck, Volume2, VolumeX, X, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { siBlender, siDocker, siFastapi, siMeta, siPostgresql, siPython, siReact, siRender, siSupabase, siThreedotjs, siTypescript, siVite } from "simple-icons";
 import {
@@ -102,6 +102,58 @@ function Approach() {
   );
 }
 
+// The film starts silently when it scrolls into view and stops when it leaves. One button controls the sound.
+function Film() {
+  const video = useRef<HTMLVideoElement>(null);
+  const mayPlay = useRef(false);
+  const [muted, setMuted] = useState(true);
+  useEffect(() => {
+    const node = video.current;
+    if (!node) return;
+    node.muted = true;
+    mayPlay.current = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const watcher = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) node.pause();
+      else if (mayPlay.current) void node.play().catch(() => undefined);
+    }, { threshold: 0.4 });
+    watcher.observe(node);
+    return () => watcher.disconnect();
+  }, []);
+  const toggleSound = () => {
+    const node = video.current;
+    if (!node) return;
+    node.muted = !node.muted;
+    setMuted(node.muted);
+    mayPlay.current = true;
+    if (node.paused) void node.play().catch(() => undefined);
+  };
+  const Icon = muted ? VolumeX : Volume2;
+  return (
+    <section id="film" className="lp-film lp-wrap">
+      <Reveal>
+        <Eyebrow>The film</Eyebrow>
+        <h2 className="lp-title">Three minutes, <em>one</em> question.</h2>
+      </Reveal>
+      <Reveal className="lp-film-frame">
+        <video
+          ref={video}
+          src="/landing/roomset-film.mp4"
+          poster="/landing/roomset-film-poster.webp"
+          preload="none"
+          muted
+          loop
+          playsInline
+          aria-label="The three-minute Roomset film"
+        />
+        <button type="button" className="lp-film-sound" onClick={toggleSound} aria-label={muted ? "Turn sound on" : "Turn sound off"} aria-pressed={!muted}>
+          <Icon size={24} strokeWidth={1.5} />
+        </button>
+      </Reveal>
+      <p className="lp-film-note">2:58. Real product captures with some waits shortened. The AR camera shot is an illustration. AI narration.</p>
+    </section>
+  );
+}
+
 export function Landing() {
   const [intro, setIntro] = useState(shouldPlayIntro);
   const [play, setPlay] = useState(!intro);
@@ -143,6 +195,8 @@ export function Landing() {
           </Reveal>
           <Reveal as="figure" className="lp-opening-photo"><img src="/landing/photo-loft.webp" alt="An open loft with a sofa, dining table and tall black windows" loading="lazy" decoding="async" /></Reveal>
         </section>
+
+        <Film />
 
         <section id="problem" className="lp-dark">
           <div className="lp-wrap lp-problem">

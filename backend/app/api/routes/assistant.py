@@ -141,7 +141,8 @@ def _admit(request: Request) -> None:
 
 
 WARM_EVERY_S = 60
-_last_warm = 0.0
+_last_warm: float | None = None
+_warm_clock = time.monotonic
 
 
 def _warm_providers() -> None:
@@ -158,9 +159,10 @@ def warm(request: Request) -> None:
     if not _warm_limit.allow(request.client.host if request.client else "unknown"):
         return
     with _lock:
-        if time.monotonic() - _last_warm < WARM_EVERY_S:
+        now = _warm_clock()
+        if _last_warm is not None and now - _last_warm < WARM_EVERY_S:
             return
-        _last_warm = time.monotonic()
+        _last_warm = now
     threading.Thread(target=_warm_providers, daemon=True).start()
 
 

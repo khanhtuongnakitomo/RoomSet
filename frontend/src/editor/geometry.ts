@@ -63,6 +63,32 @@ export function wallPolygon(wall: Wall): Vec2[] {
   return [wall.start, wall.end, [wall.end[0] + ox, wall.end[1] + oz], [wall.start[0] + ox, wall.start[1] + oz]];
 }
 
+/**
+ * Pushes the sofa back to the room side of every wall it crosses, so it slides along walls instead of
+ * passing through them. Rooms are a corner of a rectangular floor, so a wall's whole line is the room's
+ * edge: this also catches a fast drag that jumped the sofa past a wall, or around its end, in one move.
+ */
+export function keepInsideWalls(scene: SceneV1, placement: Placement): Placement {
+  const [width, , depth] = scene.furniture.dimensions;
+  let [x, z] = placement.position;
+  // Two passes settle a corner where pushing off one wall moves the sofa into the other.
+  for (let pass = 0; pass < 2; pass += 1) {
+    for (const wall of scene.walls) {
+      const [dx, dz] = [wall.end[0] - wall.start[0], wall.end[1] - wall.start[1]];
+      const length = Math.hypot(dx, dz);
+      if (length < EPSILON) continue;
+      const inward: Vec2 = [-dz / length, dx / length];
+      const corners = footprint(width, depth, { position: [x, z], yaw: placement.yaw });
+      const deepest = Math.min(...corners.map(([cx, cz]) => (cx - wall.start[0]) * inward[0] + (cz - wall.start[1]) * inward[1]));
+      if (deepest >= 0) continue;
+      x -= inward[0] * deepest;
+      z -= inward[1] * deepest;
+    }
+  }
+  const round = (value: number) => Math.round(value * 1000) / 1000;
+  return { position: [round(x), round(z)], yaw: placement.yaw };
+}
+
 export function obstaclePolygon(obstacle: Obstacle): Vec2[] {
   const [width, , depth] = obstacle.size;
   return footprint(width, depth, { position: obstacle.center, yaw: obstacle.yaw });

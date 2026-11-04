@@ -15,6 +15,7 @@ def session_view(row: SessionRow) -> SessionView:
                 for p in row.photos
             ],
             "coverage": row.coverage,
+            "reconstruction": row.reconstruction,
             "clarifications": row.clarifications or [],
             "answers": row.answers,
             "scene": row.scene,

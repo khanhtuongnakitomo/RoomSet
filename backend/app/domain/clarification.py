@@ -17,6 +17,7 @@ class Clarification(BaseModel):
 
 
 class ObstacleIn(BaseModel):
+    kind: Literal["solid", "keep_clear"] = "solid"
     label: str = Field(min_length=1, max_length=60)
     width_m: float = Field(gt=0.02, lt=10)
     depth_m: float = Field(gt=0.02, lt=10)
@@ -26,6 +27,7 @@ class ObstacleIn(BaseModel):
 
 
 class RoomAnswers(BaseModel):
+    reconstruction_id: str | None = None
     room_width_m: float = Field(ge=1.0, le=30, description="Usable length along wall A")
     room_depth_m: float = Field(ge=1.0, le=30, description="Usable length along wall B")
     ceiling_height_m: float | None = Field(default=None, ge=1.8, le=8)

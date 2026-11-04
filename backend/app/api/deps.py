@@ -25,6 +25,8 @@ def owned_session(
 
 
 def ensure_editable(row: SessionRow) -> None:
+    if (row.reconstruction or {}).get("status") == "running":
+        raise Conflict("reconstruction_running", "The photo draft is still being built.")
     if row.status in BUSY_STATUSES:
         raise Conflict("build_running", "A model is being built. Try again when it finishes.")
 

@@ -5,6 +5,7 @@
 # Dependencies and builds
 node_modules/
 frontend/dist/
+frontend/.vite/
 /dist/
 .venv/
 __pycache__/

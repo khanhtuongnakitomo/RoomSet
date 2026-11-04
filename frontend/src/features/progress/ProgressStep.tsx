@@ -7,7 +7,7 @@ import type { SessionView } from "../../api/contracts";
 const POLL_MS = 1500;
 
 const STATUS_COPY: Record<string, string> = {
-  reconstructing: "Reading your corner…",
+  reconstructing: "Preparing your confirmed room…",
   building: "Building your room and sofa…",
 };
 

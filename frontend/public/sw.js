@@ -46,8 +46,8 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin || request.headers.has("range")) return;
-  // The AR viewer fetches models itself, so they always come straight from the network.
-  if (url.pathname.startsWith("/api/") || url.pathname.endsWith(".usdz")) return;
+  // The AR viewer fetches models itself, and the film streams, so both come straight from the network.
+  if (url.pathname.startsWith("/api/") || url.pathname.endsWith(".usdz") || url.pathname.endsWith(".mp4")) return;
   if (request.mode === "navigate") event.respondWith(page(request));
   else if (url.pathname.startsWith("/assets/")) event.respondWith(fixed(request));
   else event.respondWith(refreshed(request, event));

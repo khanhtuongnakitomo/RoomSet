@@ -22,6 +22,7 @@ class Wall(BaseModel):
 
 
 class Obstacle(BaseModel):
+    kind: Literal["solid", "keep_clear"] = "solid"
     id: str
     label: str
     center: Vec2
@@ -36,7 +37,7 @@ class Calibration(BaseModel):
 
 
 class Provenance(BaseModel):
-    method: Literal["automatic", "assisted", "sample"]
+    method: Literal["automatic", "assisted", "sample", "photo_assisted"]
     builder: str
     reconstruction_model: str | None = None
     created_at: str

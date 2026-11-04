@@ -31,6 +31,7 @@ def assisted_layout(answers: RoomAnswers) -> tuple[list, list[Wall], list[Obstac
         Obstacle(
             id=f"obstacle_{index}",
             label=item.label,
+            kind=item.kind,
             center=(item.x_m, item.z_m),
             size=(item.width_m, item.height_m, item.depth_m),
         )
@@ -65,9 +66,9 @@ def build_room_glb(floor: list, walls: list[Wall], obstacles: list[Obstacle]) ->
     for item in obstacles:
         width, height, depth = item.size
         parts[item.id] = box(
-            (width, height, depth),
-            (item.center[0], height / 2, item.center[1]),
-            OBSTACLE,
+            (width, 0.015 if item.kind == "keep_clear" else height, depth),
+            (item.center[0], 0.012 if item.kind == "keep_clear" else height / 2, item.center[1]),
+            "#D9AA57" if item.kind == "keep_clear" else OBSTACLE,
             yaw=item.yaw,
         )
     return export_glb(parts)

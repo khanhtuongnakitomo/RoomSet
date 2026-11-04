@@ -5,6 +5,8 @@ from typing import Protocol
 
 from app.core.config import get_settings
 from app.core.errors import ProviderUnavailable
+from app.domain.product import SofaSpec
+from app.geometry.parametric_sofa import build_parametric_sofa
 from app.geometry.room import build_room_glb
 from app.geometry.sofa import build_sofa_glb
 
@@ -15,6 +17,7 @@ class BuildInput:
     walls: list
     obstacles: list
     sofa_size: tuple[float, float, float]  # width, height, depth
+    sofa_spec: SofaSpec | None = None
 
 
 @dataclass
@@ -32,7 +35,11 @@ class LocalBuilder:
     def build(self, spec: BuildInput) -> BuildOutput:
         return BuildOutput(
             room_glb=build_room_glb(spec.floor, spec.walls, spec.obstacles),
-            furniture_glb=build_sofa_glb(*spec.sofa_size),
+            furniture_glb=(
+                build_parametric_sofa(*spec.sofa_size, spec.sofa_spec)
+                if spec.sofa_spec
+                else build_sofa_glb(*spec.sofa_size)
+            ),
             builder="trimesh-cpu",
         )
 
@@ -58,7 +65,12 @@ class ModalBuilder:
             raise ProviderUnavailable(
                 "modal_failed", "We could not finish this model. Your inputs are saved; try again."
             ) from exc
-        return BuildOutput(result["room_glb"], result["furniture_glb"], "blender-modal")
+        furniture = (
+            build_parametric_sofa(*spec.sofa_size, spec.sofa_spec)
+            if spec.sofa_spec
+            else result["furniture_glb"]
+        )
+        return BuildOutput(result["room_glb"], furniture, "blender-modal")
 
 
 def get_builder() -> SceneBuilder:

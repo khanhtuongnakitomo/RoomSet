@@ -76,6 +76,16 @@ html.lenis, html.lenis body { height: auto; }
 .lp-statement { font-size: clamp(64px, 10vw, 168px); line-height: .96; letter-spacing: -.02em; }
 .lp-opening-photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
 
+/* Film */
+.lp-film { padding-block: 0 clamp(96px, 12vw, 176px); }
+/* Never taller than the screen, so the whole film and its sound button are in view together. */
+.lp-film-frame { position: relative; max-width: calc((100svh - 112px) * 16 / 9); margin: clamp(32px, 4vw, 56px) auto 0; aspect-ratio: 16 / 9; overflow: hidden; background: var(--rs-forest); }
+.lp-film-frame video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.lp-film-sound { position: absolute; right: clamp(12px, 2vw, 28px); bottom: clamp(12px, 2vw, 28px); display: grid; place-items: center; width: 52px; height: 52px; padding: 0; border: 1px solid rgba(247, 244, 237, .45); border-radius: 50%; background: rgba(20, 30, 25, .62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: var(--rs-ivory); cursor: pointer; transition: background 300ms, color 300ms; }
+.lp-film-sound:focus-visible { outline: 3px solid #eeb398; outline-offset: 3px; }
+@media (hover: hover) { .lp-film-sound:hover { background: var(--rs-ivory); color: var(--rs-forest); } }
+.lp-film-note { margin-top: 18px !important; font-size: 15px; line-height: 1.5; color: var(--copy); }
+
 /* Problem */
 .lp-dark { background: var(--rs-forest); color: var(--canvas); --copy: rgba(247, 244, 237, .78); --accent: #e0a184; --hair: rgba(247, 244, 237, .22); }
 .lp-dark em { color: #e0a184; }

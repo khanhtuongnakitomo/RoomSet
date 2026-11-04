@@ -27,6 +27,10 @@ const CAP_COLOR = 0xf7f4ed;
 const SELECT = 0xc66b48;
 const BLOCKED = 0x9d3e35;
 const MODEL_WALL_HEIGHT = 1.45;
+/** Inside a room the camera keeps this far from the walls, floor and ceiling, so it never sees through them. */
+const ROOM_CAMERA_INSET = 0.2;
+/** Sideways view a room should show, in degrees. Matches a 62° lens on a 16:10 screen. */
+const ROOM_VIEW_WIDTH_DEG = 88;
 
 const ROOM_VERTEX = /* glsl */ `
   varying vec3 vWorld;
@@ -261,20 +265,18 @@ export class StudioEngine {
       this.controls.target.copy(center);
     } else {
       const [minX, maxX, minZ, maxZ] = this.room.rect;
-      const pull = Math.max(1, 1.15 / aspect);
       const middleZ = (minZ + maxZ) / 2;
       this.camera = this.perspective;
-      this.perspective.fov = 62;
+      // A tall screen cannot step back without leaving the room, so it sees more by widening the lens.
+      const wide = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(ROOM_VIEW_WIDTH_DEG / 2)) / aspect));
+      this.perspective.fov = THREE.MathUtils.clamp(wide, 62, 88);
       // Standing at the window end, eye height, looking down the room's length.
-      this.perspective.position.set(maxX - 0.12, 1.5, middleZ + 0.08);
+      this.perspective.position.set(maxX - ROOM_CAMERA_INSET, 1.5, middleZ + 0.08);
       this.controls.object = this.perspective;
       this.controls.enableRotate = true;
       this.controls.target.set(minX + 1.5, 0.75, middleZ - 0.05);
-      if (pull > 1) {
-        const offset = this.perspective.position.clone().sub(this.controls.target).multiplyScalar(pull);
-        this.perspective.position.copy(this.controls.target).add(offset);
-      }
     }
+    this.keepCameraInRoom();
     this.perspective.updateProjectionMatrix();
     this.resize();
     this.controls.update();
@@ -400,8 +402,31 @@ export class StudioEngine {
       offset.multiplyScalar(1 + delta * 0.04);
       offset.setLength(THREE.MathUtils.clamp(offset.length(), this.controls.minDistance, this.controls.maxDistance));
       this.perspective.position.copy(this.controls.target).add(offset);
+      this.keepCameraInRoom();
     }
     this.invalidate();
+  }
+
+  /**
+   * In a room the camera orbits on the inside: when a swipe or zoom would carry it through a wall, it stops
+   * at the wall on the line toward its target instead. Other views look from outside, so they are left alone.
+   */
+  private keepCameraInRoom(): void {
+    if (this.mode !== "room") return;
+    const [minX, maxX, minZ, maxZ] = this.room.rect;
+    const low = new THREE.Vector3(minX + ROOM_CAMERA_INSET, 0.35, minZ + ROOM_CAMERA_INSET);
+    const high = new THREE.Vector3(maxX - ROOM_CAMERA_INSET, ROOM_HEIGHT - 0.15, maxZ - ROOM_CAMERA_INSET);
+    const target = this.controls.target.clamp(low, high);
+    const position = this.perspective.position;
+    if (position.x >= low.x && position.x <= high.x && position.y >= low.y && position.y <= high.y && position.z >= low.z && position.z <= high.z) return;
+    const direction = position.clone().sub(target);
+    let reach = direction.length();
+    direction.normalize();
+    for (const axis of ["x", "y", "z"] as const) {
+      if (direction[axis] > 1e-6) reach = Math.min(reach, (high[axis] - target[axis]) / direction[axis]);
+      if (direction[axis] < -1e-6) reach = Math.min(reach, (low[axis] - target[axis]) / direction[axis]);
+    }
+    position.copy(target).addScaledVector(direction, Math.max(reach, 0.05));
   }
 
   dispose(): void {
@@ -574,6 +599,7 @@ export class StudioEngine {
     cancelAnimationFrame(this.frame);
     this.frame = requestAnimationFrame(() => {
       const moving = this.controls.update();
+      this.keepCameraInRoom();
       this.renderer.render(this.scene, this.camera);
       this.placeLabels();
       if (moving) this.invalidate();

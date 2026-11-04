@@ -20,6 +20,7 @@ from app.api.routes import (
     health,
     photos,
     product,
+    reconstruction,
     renders,
     sessions,
     studio,
@@ -29,6 +30,7 @@ from app.core.errors import AppError, NotFound
 from app.core.logging import configure_logging, request_id
 from app.core.rate_limit import RateLimiter
 from app.services.pipeline import fail_interrupted_builds
+from app.services.reconstruction import recover_jobs
 from app.services.retention import purge_expired, start_sweeper
 
 # AR Quick Look opens USDZ only with its own media type.
@@ -63,6 +65,7 @@ async def lifespan(_app: FastAPI):
     configure_logging()
     _warn_on_unsafe_production(get_settings())
     interrupted = fail_interrupted_builds()
+    recover_jobs()
     purged = purge_expired()
     log.info("started", extra={"fields": {"interrupted_builds": interrupted, "purged": purged}})
     stop = threading.Event()
@@ -148,7 +151,18 @@ def create_app() -> FastAPI:
         log.error("unhandled error", exc_info=exc)
         return _error(500, "internal_error", "Something went wrong on our side.")
 
-    for module in (health, sessions, product, photos, build, assets, renders, studio, assistant):
+    for module in (
+        health,
+        sessions,
+        product,
+        photos,
+        build,
+        assets,
+        renders,
+        studio,
+        assistant,
+        reconstruction,
+    ):
         app.include_router(module.router)
 
     dist = Path(settings.frontend_dist)

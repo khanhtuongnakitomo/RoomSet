@@ -106,5 +106,6 @@ def advise(body: LayoutFacts, request: Request) -> AdviceOut:
         [{"type": "text", "text": f"<layout>{facts}</layout>"}],
         Advice,
         max_tokens=MAX_REPLY_TOKENS,
+        reasoning_effort="minimal",
     )
     return AdviceOut(**advice.model_dump(), model=settings.baseten_model)

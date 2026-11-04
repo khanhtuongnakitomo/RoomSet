@@ -54,9 +54,16 @@ def spark(monkeypatch):
 
     original = baseten.chat_json
 
-    def patched(system, content, schema, max_tokens=4000, client=None):
+    def patched(system, content, schema, max_tokens=4000, client=None, reasoning_effort=None):
         mock = httpx.Client(transport=httpx.MockTransport(handler))
-        return original(system, content, schema, max_tokens=max_tokens, client=mock)
+        return original(
+            system,
+            content,
+            schema,
+            max_tokens=max_tokens,
+            client=mock,
+            reasoning_effort=reasoning_effort,
+        )
 
     monkeypatch.setattr(baseten, "chat_json", patched)
     return captured

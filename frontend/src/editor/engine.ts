@@ -5,6 +5,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import type { Placement, SceneV1 } from "../api/contracts";
+import { keepInsideWalls } from "./geometry";
 
 export type ViewMode = "orbit" | "top";
 
@@ -67,6 +68,7 @@ export class EditorEngine {
   private sun = new THREE.DirectionalLight(0xfff4e6, 1.6);
   private disposed = false;
   private backdrop: Backdrop | null = null;
+  private room: SceneV1 | null = null;
 
   constructor(private container: HTMLElement, private events: EngineEvents) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: false });
@@ -157,6 +159,7 @@ export class EditorEngine {
     const zs = scene.floor.map((p) => p[1]);
     this.span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     this.center.set((Math.min(...xs) + Math.max(...xs)) / 2, 0, (Math.min(...zs) + Math.max(...zs)) / 2);
+    this.room = scene;
     this.setPlacement(placement);
     this.setView("orbit");
     return mismatch > SIZE_TOLERANCE_M ? "The 3D model's size doesn't match the confirmed dimensions." : null;
@@ -403,6 +406,11 @@ export class EditorEngine {
       const [minX, maxX, minZ, maxZ] = this.backdrop.bounds;
       next.x = THREE.MathUtils.clamp(next.x, minX, maxX);
       next.z = THREE.MathUtils.clamp(next.z, minZ, maxZ);
+    }
+    if (this.room) {
+      // The sofa slides along a wall it is pushed into rather than passing through it.
+      const [x, z] = keepInsideWalls(this.room, { position: [next.x, next.z], yaw: this.sofa.rotation.y }).position;
+      next.set(x, 0, z);
     }
     this.sofa.position.set(next.x, 0, next.z);
     this.invalidate();

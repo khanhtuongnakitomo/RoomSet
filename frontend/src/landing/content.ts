@@ -4,6 +4,7 @@ export type Status = "Working" | "Testing" | "Next";
 export type Mark = "yes" | "part" | "no" | "unknown";
 
 export const NAV_LINKS = [
+  ["Film", "#film"],
   ["Problem", "#problem"],
   ["Approach", "#approach"],
   ["Features", "#features"],
@@ -86,7 +87,7 @@ export const STACK_ROWS: Tech[][] = [
 export const COMPARE_COLUMNS = ["Any listing", "Your real room", "True product size", "Move it in 3D", "Overlap and clearance", "Stand inside the room", "Layout advice", "Phone browser"];
 
 export const COMPARE_ROWS: { name: string; detail: string; refs: number[]; marks: Mark[]; us?: boolean }[] = [
-  { name: "Roomset", detail: "Any sofa you can get the size of", refs: [], marks: ["yes", "part", "yes", "yes", "yes", "part", "part", "yes"], us: true },
+  { name: "Roomset", detail: "Real furniture at its true size, in your space", refs: [], marks: ["yes", "part", "yes", "yes", "yes", "part", "part", "yes"], us: true },
   { name: "IKEA Kreativ", detail: "Scan a room, place IKEA furniture", refs: [1, 2], marks: ["no", "yes", "yes", "yes", "unknown", "unknown", "unknown", "part"] },
   { name: "Wayfair View in Room", detail: "AR and room photos for its own range", refs: [3, 4], marks: ["no", "yes", "yes", "yes", "unknown", "no", "unknown", "part"] },
   { name: "Planner 5D", detail: "Measurement-first floor planning", refs: [5], marks: ["no", "no", "yes", "yes", "part", "unknown", "unknown", "yes"] },
@@ -119,4 +120,4 @@ export const TEAM = [
   },
 ];
 
-export const CREDITS = "Rooms, sofas and furniture: Poly Haven, CC0. Interior photographs: StockSnap, CC0. Furniture is rendered into the room photographs.";
+export const CREDITS = "Rooms and furniture: Poly Haven, CC0. Interior photographs: StockSnap, CC0. Furniture is rendered into the room photographs.";

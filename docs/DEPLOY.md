@@ -2,14 +2,14 @@
 
 ## Quick preview on Vercel (free)
 
-Good for showing the landing page, the start page and the 3D sample apartment. These are static files.
+Good for letting people try the landing page, the fit demo, the 3D sample apartment and AR. These are static files, including a prebuilt sample room for the fit demo (`tools/static_demo/build.py`).
 
 1. Vercel → Add New → Project → import this repository, and pick the branch to deploy.
 2. Leave the build settings alone, and leave Root Directory empty. `vercel.json` already sets the build, and a Root Directory of `frontend` also works. Deploy.
 3. If you deploy a branch other than the repository's default, make it the project's production branch, then redeploy. Share the production domain: on new projects, Standard Protection asks for a Vercel login on preview and generated URLs.
 4. Open the link in a private window to confirm it opens without a login.
 
-What does not run there: planning your own room (`/app`) and the AI architect. They need the FastAPI server, whose build jobs run in background threads and write files, which does not fit serverless functions as written. `/app` says so and points to the sample apartment; the architect's review falls back to its built-in rules.
+What does not run there: planning your own room (`/app`), the AI architect and the voice assistant. Without a server, the start page sends people to the fit demo instead, and the assistant button stays hidden. They need the FastAPI server, whose build jobs run in background threads and write files, which does not fit serverless functions as written. `/app` says so and points to the fit demo; the architect's review falls back to its built-in rules.
 
 To add them later, deploy the server as below, then add this as the first entry in `rewrites` in `vercel.json`:
 

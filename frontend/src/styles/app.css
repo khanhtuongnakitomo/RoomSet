@@ -42,11 +42,13 @@ img { max-width: 100%; display: block; }
 .plan-stage-copy p { margin: 0; max-width: 26em; font-size: clamp(18px, 1.4vw, 22px); line-height: 1.4; color: rgba(247, 244, 237, .9); }
 @keyframes plan-settle { from { transform: scale(1.05); } to { transform: scale(1); } }
 .plan-work { flex: 1; min-width: 0; display: flex; }
-.plan-work-inner { width: 100%; max-width: 860px; margin: auto; padding: 24px max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left)); display: grid; gap: 28px; animation: plan-rise 700ms cubic-bezier(.16, 1, .3, 1) both; }
+/* Phones read from the top; a short step is centered only on wide screens (see the 1000px query). The
+   minmax column stops one wide field from pushing the whole step past the screen edge. */
+.plan-work-inner { width: 100%; max-width: 860px; margin: 0 auto; padding: 24px max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left)); display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 28px; animation: plan-rise 700ms cubic-bezier(.16, 1, .3, 1) both; }
 @keyframes plan-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
 /* Fields */
-.plan-group { display: grid; gap: 18px; }
+.plan-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .plan-group + .plan-group { padding-top: 28px; border-top: 1px solid var(--rs-linen); }
 .plan-label { display: flex; align-items: center; gap: 10px; margin: 0; font: 500 16px/1.3 var(--rs-font-body); color: var(--rs-forest); }
 .plan-label svg { flex: none; color: var(--rs-clay-text); }
@@ -68,6 +70,8 @@ img { max-width: 100%; display: block; }
 
 .plan-actions { position: sticky; z-index: 3; bottom: 0; display: flex; gap: 10px; margin-inline: -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(to bottom, rgba(247, 244, 237, 0), var(--rs-ivory) 14px); }
 .editor-panel .plan-actions { position: static; margin: 0; padding: 0; background: none; }
+.plan-actions--stack { flex-direction: column; align-items: center; gap: 4px; }
+.plan-actions--stack .rs-button { width: 100%; flex: none; }
 .plan-actions .rs-button { flex: 1; min-height: 56px; font-size: 17px; text-decoration: none; }
 
 /* Photo capture */
@@ -126,6 +130,17 @@ img { max-width: 100%; display: block; }
 .progress-bar span { display: block; height: 100%; width: 40%; background: #eeb398; animation: slide 1.6s cubic-bezier(.65, 0, .35, 1) infinite; }
 @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
 
+/* Fit demo */
+.fit-top { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: calc(8px + env(safe-area-inset-top)) 16px 8px; background: var(--rs-forest); color: var(--rs-ivory); font: 500 20px var(--rs-font-display); }
+.fit-top img { display: block; height: 30px; width: auto; }
+.fit .result { flex: 1; min-height: 0; }
+.fit-center { min-height: 100dvh; display: grid; place-content: center; padding: 24px; text-align: center; color: var(--rs-muted); }
+.fit-verdict { margin: 0; font: 500 clamp(34px, 4vw, 44px)/1.05 var(--rs-font-display); }
+.fit-verdict.is-over { color: var(--rs-error); }
+.fit-verdict.is-ok { color: var(--rs-forest); }
+.fit-variants { display: flex; gap: 8px; }
+.fit-variants .chip { flex: 1; min-height: 48px; font-size: 17px; }
+
 /* Result */
 .result { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .editor-frame { position: relative; flex: none; height: 52dvh; min-height: 280px; background: var(--rs-ivory); overflow: hidden; }
@@ -179,6 +194,9 @@ img { max-width: 100%; display: block; }
   .plan-tile { min-height: 110px; font-size: 15px; }
   .plan-choices { grid-template-columns: 1fr; }
   .editor-hint { font-size: 13px; padding: 6px 12px; width: max-content; }
+  /* Small labels keep the sofa and its walls visible on a phone-sized 3D view. */
+  .result-labels { top: 10px; left: 10px; right: 70px; gap: 4px; }
+  .result-labels .rs-badge { min-height: 26px; padding: 2px 10px; border-radius: 13px; font-size: 12px; }
   .plan-sizes .plan-label { font-size: 14px; gap: 6px; }
   .plan-steps li { min-height: 36px; padding: 0 14px; }
   .plan-steps { width: 100%; justify-content: space-between; }
@@ -203,7 +221,7 @@ img { max-width: 100%; display: block; }
   .plan-stage { width: 40%; min-height: 0; }
   .plan-stage-copy { padding: clamp(32px, 4vw, 64px); }
   .plan-work { min-height: 0; overflow-y: auto; }
-  .plan-work-inner { padding: 40px clamp(32px, 5vw, 88px); }
+  .plan-work-inner { margin: auto; padding: 40px clamp(32px, 5vw, 88px); }
   .result { flex-direction: row; }
   .editor-frame { flex: 1; height: auto; min-width: 0; }
   .editor-panel { flex: none; width: clamp(380px, 28vw, 460px); overflow-y: auto; padding: 32px; }
@@ -216,3 +234,45 @@ img { max-width: 100%; display: block; }
 @media (prefers-reduced-motion: reduce) {
   .plan-stage img, .plan-work-inner, .spin, .progress-bar span { animation: none; }
 }
+
+/* Product-specific furniture and room confirmation. */
+/* A fieldset is as wide as its content by default, which pushed the product step past a phone's edge. */
+.sofa-options { min-width: 0; border: 0; padding: 0; margin: 16px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.sofa-options legend { font-size: 1.1rem; margin-bottom: 16px; }
+.sofa-options label { min-width: 0; display: flex; flex-direction: column; gap: 8px; font-size: .85rem; }
+.sofa-options .rs-input { width: 100%; min-width: 0; }
+.sofa-options .sofa-color { flex-direction: row; align-items: center; gap: 18px; grid-column: 1 / -1; }
+.sofa-color input { width: 70px; height: 42px; border: 1px solid #b4b9ab; border-radius: 6px; padding: 3px; background: transparent; cursor: pointer; }
+.product-preview, .product-reference, .room-diagram { margin: 20px 0; }
+.product-preview-stage { width: 100%; height: 300px; border-radius: 14px; overflow: hidden; touch-action: none; }
+.product-preview-stage canvas { display: block; }
+.product-preview figcaption, .product-reference figcaption, .room-diagram figcaption { font-size: .78rem; line-height: 1.5; color: #656c60; margin-top: 9px; }
+.product-reference img { display: block; max-width: 100%; max-height: 230px; object-fit: contain; border-radius: 10px; }
+.variant-history { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #c9cebf; padding-top: 16px; }
+.room-diagram { max-width: 480px; background: #f4f0e7; padding: 14px; border-radius: 14px; }
+.room-diagram svg { width: 100%; display: block; }
+.room-diagram text { fill: #384535; font-family: inherit; font-size: 12px; }
+.room-photo-strip { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0; }
+.room-photo-strip img { width: 110px; height: 90px; object-fit: cover; border-radius: 8px; flex: 0 0 auto; }
+.obstacle-row { flex-wrap: wrap; }
+.obstacle-row .field { min-width: 110px; }
+@media (max-width: 600px) {
+  .product-preview-stage { height: 250px; }
+  .sofa-options { gap: 14px; }
+  .editor-panel .rs-button { white-space: normal; text-align: left; }
+}
+.photo-draft { border: 1px solid #b5bdab; padding: 18px; border-radius: 12px; margin: 20px 0; }
+.photo-draft summary { cursor: pointer; font-weight: 600; }
+.photo-draft > * + * { margin-top: 14px; }
+.anchor-photo { position: relative; cursor: crosshair; width: 100%; touch-action: manipulation; }
+.anchor-photo img { display: block; width: 100%; border-radius: 8px; }
+.anchor-marker { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; background: #d9ae5f; border: 2px solid #fff; color: #18271d; width: 28px; height: 28px; display: grid; place-items: center; font-weight: 700; pointer-events: none; }
+.demo-steps { padding-left: 1.2rem; line-height: 1.7; }
+.demo-steps li + li { margin-top: 12px; }
+.nudge-controls { display: flex; gap: 10px; margin: 18px 0 8px; }
+.nudge-controls button { font-size: 24px; }
+.obstacle-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.obstacle-row > :first-child { grid-column: 1 / -1; }
+.obstacle-row .field { min-width: 0; }
+@media (min-width: 900px) { .obstacle-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.sofa-color input { font-size: 16px; }

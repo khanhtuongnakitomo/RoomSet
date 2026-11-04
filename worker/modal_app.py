@@ -1,7 +1,8 @@
 """Modal functions for jobs too heavy for the web host.
 
 Deploy: `modal deploy worker/modal_app.py`, then set SCENE_BUILDER=modal on the backend.
-Not yet run on Modal; record the first real job in docs/STATUS.md before claiming it.
+The local demo uses CPU templates. The separate photo reconstruction worker lives in
+backend/app/providers/modal_reconstruction.py and runs as an ephemeral Modal app.
 """
 
 from pathlib import Path
@@ -12,9 +13,13 @@ app = modal.App("roomset-worker")
 
 blender_image = (
     modal.Image.debian_slim(python_version="3.11")
-    .apt_install("libxi6", "libxrender1", "libxkbcommon0", "libgl1", "libsm6", "libxfixes3")
+    .apt_install(
+        "libxi6", "libxrender1", "libxkbcommon0", "libgl1", "libsm6", "libxfixes3"
+    )
     .pip_install("bpy==4.2.0")
-    .add_local_file(Path(__file__).parent / "blender_build.py", "/root/blender_build.py")
+    .add_local_file(
+        Path(__file__).parent / "blender_build.py", "/root/blender_build.py"
+    )
 )
 
 
@@ -28,15 +33,8 @@ def build_scene(spec: dict) -> dict:
 
     width, height, depth = spec["sofa_size"]
     return {
-        "room_glb": blender_build.build_room(spec["floor"], spec["walls"], spec["obstacles"]),
+        "room_glb": blender_build.build_room(
+            spec["floor"], spec["walls"], spec["obstacles"]
+        ),
         "furniture_glb": blender_build.build_sofa(width, height, depth),
     }
-
-
-@app.function(timeout=900, max_containers=1)
-def reconstruct_corner(_photos: list[bytes]) -> dict:
-    """Issue #4's VGGT spike goes here: GPU image, cached weights, then fit floor and walls.
-
-    Cap the experiment at about four focused hours. If it fails, the assisted path stays.
-    """
-    raise NotImplementedError("VGGT reconstruction is not implemented yet.")

@@ -42,6 +42,9 @@ class Settings(BaseSettings):
 
     scene_builder: Literal["local", "modal"] = "local"
     modal_app_name: str = "roomset-worker"
+    reconstruction_enabled: bool = False
+    reconstruction_daily_limit: int = Field(default=3, ge=0, le=20)
+    reconstruction_usage_file: str = "./data/reconstruction-usage.json"
 
     max_concurrent_jobs: int = Field(default=2, ge=1, le=8)
     max_renders_per_session: int = Field(default=10, ge=0)
