@@ -1,7 +1,7 @@
 // Typed API calls. The session token stays in memory and localStorage for this browser only.
 
 import type {
-  AssistantHeard, AssistantReply, Capabilities, Placement, ProductDraft, RenderView, RoomAnswers, SessionView, PhotoView,
+  AssistantHeard, AssistantReply, Capabilities, Placement, ProductDraft, RenderView, RoomAnswers, SessionView, PhotoView, ReconstructionRequest, SofaSpec,
 } from "./contracts";
 
 export class ApiError extends Error {
@@ -69,6 +69,17 @@ export const api = {
     request<ProductDraft>(`${base(auth)}/product/screenshot`, upload({ file }), auth),
   confirmProduct: (auth: Auth, body: unknown) =>
     request<SessionView>(`${base(auth)}/product`, json("PUT", body), auth),
+  suggestAppearance: (auth: Auth, description: string) =>
+    request<SofaSpec>(`${base(auth)}/product/appearance`, json("POST", { description }), auth),
+  previewProduct: async (auth: Auth, body: unknown, signal: AbortSignal) => {
+    const response = await fetch(`${base(auth)}/product/preview`, {
+      method: "POST", signal,
+      headers: { Authorization: `Bearer ${auth.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error("Check the dimensions to see your sofa preview.");
+    return response.arrayBuffer();
+  },
 
   uploadPhoto: (auth: Auth, file: Blob, name = "photo.jpg") => {
     const form = new FormData();
@@ -81,6 +92,8 @@ export const api = {
 
   saveAnswers: (auth: Auth, answers: RoomAnswers) =>
     request<SessionView>(`${base(auth)}/answers`, json("PUT", answers), auth),
+  reconstruct: (auth: Auth, body: ReconstructionRequest) =>
+    request<SessionView>(`${base(auth)}/reconstruction`, json("POST", body), auth),
   startBuild: (auth: Auth) => request<SessionView>(`${base(auth)}/build`, { method: "POST" }, auth),
   saveLayout: (auth: Auth, placement: Placement) =>
     request<SessionView>(`${base(auth)}/layout`, json("PUT", placement), auth),

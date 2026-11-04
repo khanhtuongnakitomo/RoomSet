@@ -25,6 +25,18 @@ def save_answers(
     db: Session = Depends(get_db),
 ) -> SessionView:
     ensure_editable(row)
+    if body.reconstruction_id:
+        draft = row.reconstruction or {}
+        if (
+            draft.get("id") != body.reconstruction_id
+            or draft.get("status") != "ready"
+            or set(draft.get("photo_ids", [])) != {photo.id for photo in row.photos}
+        ):
+            raise AppError(
+                "stale_photo_draft",
+                "The photo draft changed. Use measured-room mode or make a new draft.",
+                409,
+            )
     row.answers = body.model_dump(mode="json")
     if row.status == "collecting":
         row.status = "needs_input"
@@ -36,6 +48,7 @@ def save_answers(
 def start_build(
     row: SessionRow = Depends(owned_session), db: Session = Depends(get_db)
 ) -> SessionView:
+    ensure_editable(row)
     if not (row.product or {}).get("confirmed"):
         raise AppError("product_unconfirmed", "Confirm the sofa dimensions first.", 409)
     if not row.answers:

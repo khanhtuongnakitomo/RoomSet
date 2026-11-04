@@ -37,6 +37,10 @@ Other tools sell their own catalog, or generate a new picture of your room. Room
 
 ## What you can do
 
+For the Windows phone demo, run `scripts/phone.cmd` and open its `/demo` link. See the
+[demo walkthrough](docs/DEMO_GUIDE.md) for the presentation script, your-own-room flow,
+and the verified boundary between measured rooms and experimental photo reconstruction.
+
 | | |
 |---|---|
 | **Walk through a sample apartment** | Three furnished rooms in 3D, built from real 360° photographs. No sign-up and no setup. |

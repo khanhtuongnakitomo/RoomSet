@@ -8,6 +8,7 @@ import { EASE_INOUT } from "../landing/motion";
 import { onNavigate, trackTransition } from "./nav";
 
 const AppPage = lazy(() => import("./App").then((module) => ({ default: module.App })));
+const DemoPage = lazy(() => import("../features/hub/Demo").then((module) => ({ default: module.Demo })));
 
 const ArPage = lazy(() => import("../features/ar/ArGallery").then((module) => ({ default: module.ArGallery })));
 
@@ -76,7 +77,9 @@ export function Root() {
 
   return (
     <MotionConfig reducedMotion="user">
-      {path.startsWith("/app") ? (
+      {path.startsWith("/demo") ? (
+        <Suspense fallback={null}><DemoPage /></Suspense>
+      ) : path.startsWith("/app") ? (
         <Suspense fallback={null}>
           <AppPage />
         </Suspense>

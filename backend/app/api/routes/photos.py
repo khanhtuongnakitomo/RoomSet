@@ -21,6 +21,18 @@ from app.storage.base import get_storage
 router = APIRouter(prefix="/api/sessions/{session_id}", tags=["photos"])
 
 
+def _invalidate_photo_draft(row: SessionRow) -> None:
+    if row.reconstruction:
+        row.reconstruction = {
+            **row.reconstruction,
+            "status": "failed",
+            "result": None,
+            "error": "The photos changed. Make a new photo draft or use measured-room mode.",
+        }
+    if row.answers:
+        row.answers = {**row.answers, "reconstruction_id": None}
+
+
 def _photo(row: SessionRow, photo_id: str) -> PhotoRow:
     photo = next((p for p in row.photos if p.id == photo_id), None)
     if photo is None:
@@ -60,6 +72,7 @@ async def upload_photo(
         )
     )
     row.status = "collecting"
+    _invalidate_photo_draft(row)
     db.commit()
     return PhotoView(id=photo_id, width=clean.width, height=clean.height, quality=quality)
 
@@ -81,6 +94,7 @@ def delete_photo(
     get_storage().delete(photo.storage_key)
     row.photos.remove(photo)
     row.status = "collecting"
+    _invalidate_photo_draft(row)
     db.commit()
 
 

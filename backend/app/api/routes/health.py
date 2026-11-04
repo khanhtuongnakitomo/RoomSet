@@ -40,6 +40,7 @@ def capabilities() -> Capabilities:
         product_ai=settings.spark_enabled,
         style_render=settings.image_enabled,
         scene_builder=settings.scene_builder,
+        reconstruction="photo_assisted" if settings.reconstruction_enabled else "assisted",
         max_photos=settings.max_photos,
         min_photos=settings.min_photos,
         assistant=settings.assistant_enabled,

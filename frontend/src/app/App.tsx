@@ -14,7 +14,7 @@ import { ResultStep } from "../features/result/ResultStep";
 import { navigate } from "./nav";
 import { loadAuth, saveAuth } from "./sessionStore";
 
-type Override = "product" | "capture" | null;
+type Override = "product" | "capture" | "clarify" | null;
 
 export function App() {
   const [auth, setAuth] = useState<Auth | null>(loadAuth);
@@ -92,16 +92,17 @@ export function App() {
     if (override === "product" || !session.product?.confirmed) {
       return <ProductStep auth={auth} session={session} capabilities={capabilities} onDone={update} />;
     }
+    if (override === "clarify") return <ClarifyStep auth={auth} session={session} onDone={update} onBack={() => setOverride(null)} reconstructionEnabled={capabilities.reconstruction === "photo_assisted"} />;
     switch (session.status) {
       case "ready":
-        return <ResultStep auth={auth} session={session} capabilities={capabilities} onSession={setSession} onStartOver={startOver} />;
+        return <ResultStep key={session.scene?.assets.furniture} auth={auth} session={session} capabilities={capabilities} onSession={setSession} onStartOver={startOver} onEditProduct={() => setOverride("product")} onEditRoom={() => setOverride("clarify")} />;
       case "reconstructing":
       case "building":
       case "failed":
         return <ProgressStep auth={auth} session={session} onSession={setSession} onDone={update} />;
       case "needs_input":
         if (override !== "capture") {
-          return <ClarifyStep auth={auth} session={session} onDone={update} onBack={() => setOverride("capture")} />;
+          return <ClarifyStep auth={auth} session={session} onDone={update} onBack={() => setOverride("capture")} reconstructionEnabled={capabilities.reconstruction === "photo_assisted"} />;
         }
     }
     return (
@@ -119,6 +120,7 @@ export function App() {
   const step = () => {
     if (serverMissing || !session) return null;
     if (override === "product" || !session.product?.confirmed) return 0;
+    if (override === "clarify") return 2;
     if (session.status === "needs_input") return override === "capture" ? 1 : 2;
     return ["ready", "reconstructing", "building", "failed"].includes(session.status) ? 3 : 1;
   };

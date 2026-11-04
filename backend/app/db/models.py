@@ -29,6 +29,7 @@ class SessionRow(Base):
     status: Mapped[str] = mapped_column(String(20), default="collecting")
     product: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     coverage: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    reconstruction: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     clarifications: Mapped[list] = mapped_column(JSON, default=list)
     answers: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     scene: Mapped[dict | None] = mapped_column(JSON, nullable=True)

@@ -5,6 +5,7 @@ must set provenance.method to "automatic" only when it actually produced the geo
 """
 
 import logging
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from functools import lru_cache
@@ -27,6 +28,7 @@ from app.domain.scene import (
 )
 from app.domain.session import BUSY_STATUSES, SessionError
 from app.geometry.room import assisted_layout
+from app.services.clarifications import rule_questions
 from app.services.scene_builders import BuildInput, get_builder
 from app.storage.base import get_storage
 
@@ -90,14 +92,11 @@ def compose_scene(
     answers: RoomAnswers,
     photo_ids: list[str],
     method: str = "assisted",
+    reconstruction: dict | None = None,
 ) -> SceneV1:
     floor, walls, obstacles = _layout(answers)
     size = (product.width.value_m, product.height.value_m, product.depth.value_m)
-    output = get_builder().build(BuildInput(floor, walls, obstacles, size))
-
-    storage = get_storage()
-    storage.put(asset_key(session_id, ROOM_ASSET), output.room_glb, "model/gltf-binary")
-    storage.put(asset_key(session_id, FURNITURE_ASSET), output.furniture_glb, "model/gltf-binary")
+    output = get_builder().build(BuildInput(floor, walls, obstacles, size, product.geometry))
 
     warnings = (
         []
@@ -107,6 +106,38 @@ def compose_scene(
     notes = ["Room built using your confirmed measurements."]
     if method == "sample":
         notes = [SAMPLE_NOTE]
+    photo_draft = reconstruction or {}
+    if answers.reconstruction_id:
+        if (
+            photo_draft.get("id") != answers.reconstruction_id
+            or photo_draft.get("status") != "ready"
+        ):
+            raise AppError(
+                "stale_photo_draft",
+                "The photo draft changed. Review the room measurements again.",
+                409,
+            )
+        result = photo_draft["result"]
+        within_tolerance = all(
+            abs(value - result[key]) <= max(0.05, result[key] * 0.05)
+            for key, value in (("width_m", answers.room_width_m), ("depth_m", answers.room_depth_m))
+        )
+        if within_tolerance:
+            method = "photo_assisted"
+            notes = result["notes"]
+            warnings.append(
+                "Photo-derived depth remains approximate. Verify tight clearances in person."
+            )
+        else:
+            notes.append(
+                "Photo-derived dimensions were corrected; "
+                "the confirmed measurements drive this room."
+            )
+    revision = uuid.uuid4().hex
+    room_name, sofa_name = f"room-{revision}.glb", f"sofa-{revision}.glb"
+    storage = get_storage()
+    storage.put(asset_key(session_id, room_name), output.room_glb, "model/gltf-binary")
+    storage.put(asset_key(session_id, sofa_name), output.furniture_glb, "model/gltf-binary")
     return SceneV1(
         floor=floor,
         walls=walls,
@@ -118,6 +149,7 @@ def compose_scene(
         provenance=Provenance(
             method=method,
             builder=output.builder,
+            reconstruction_model="facebook/VGGT-1B" if method == "photo_assisted" else None,
             created_at=datetime.now(UTC).isoformat(),
             notes=notes,
         ),
@@ -128,7 +160,7 @@ def compose_scene(
             is_proxy=True,
             placement=default_placement(answers.room_width_m, size[0], size[2]),
         ),
-        assets=Assets(room=ROOM_ASSET, furniture=FURNITURE_ASSET),
+        assets=Assets(room=room_name, furniture=sofa_name),
         source_photos=photo_ids,
         warnings=warnings,
     )
@@ -141,11 +173,15 @@ def run_build(session_id: str) -> None:
             product = Product.model_validate(row.product)
             answers = RoomAnswers.model_validate(row.answers)
             photo_ids = [photo.id for photo in row.photos]
+            reconstruction = row.reconstruction
         _set_status(session_id, "building")
-        scene = compose_scene(session_id, product, answers, photo_ids)
+        scene = compose_scene(
+            session_id, product, answers, photo_ids, reconstruction=reconstruction
+        )
         with session_scope() as db:
             row = db.get(SessionRow, session_id)
             row.scene = scene.model_dump(mode="json")
+            row.renders = []
             row.placement = scene.furniture.placement.model_dump(mode="json")
             row.status = "ready"
     except Exception as exc:
@@ -162,21 +198,26 @@ def run_build(session_id: str) -> None:
 def build_sample(session_id: str) -> None:
     """A labelled example, so people can try the editor without photos."""
     product = Product(
-        name="Sample three-seat sofa",
-        width=MeasuredField(value_m=2.1, source="user", confidence="high"),
+        name="Demo sofa — 250 cm",
+        width=MeasuredField(value_m=2.5, source="user", confidence="high"),
         depth=MeasuredField(value_m=0.92, source="user", confidence="high"),
         height=MeasuredField(value_m=0.84, source="user", confidence="high"),
         confirmed=True,
     )
     answers = RoomAnswers(
-        room_width_m=4.2,
-        room_depth_m=3.4,
+        room_width_m=2.4,
+        room_depth_m=2.8,
         dimensions_measured=False,
         obstacles=[
             ObstacleIn(
-                label="Radiator", width_m=0.12, depth_m=0.9, height_m=0.7, x_m=0.08, z_m=1.5
+                label="Door clearance",
+                kind="keep_clear",
+                width_m=0.8,
+                depth_m=0.9,
+                height_m=0.1,
+                x_m=1.95,
+                z_m=1.9,
             ),
-            ObstacleIn(label="Plant", width_m=0.45, depth_m=0.45, height_m=1.2, x_m=3.8, z_m=0.3),
         ],
     )
     scene = compose_scene(session_id, product, answers, [], method="sample")
@@ -184,6 +225,7 @@ def build_sample(session_id: str) -> None:
         row = db.get(SessionRow, session_id)
         row.product = product.model_dump(mode="json")
         row.answers = answers.model_dump(mode="json")
+        row.clarifications = [q.model_dump(mode="json") for q in rule_questions()]
         row.scene = scene.model_dump(mode="json")
         row.placement = scene.furniture.placement.model_dump(mode="json")
         row.status = "ready"

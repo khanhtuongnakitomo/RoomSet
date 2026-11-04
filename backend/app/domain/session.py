@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from app.domain.capture import CoverageReport, PhotoView
 from app.domain.clarification import Clarification, RoomAnswers
 from app.domain.product import Product
+from app.domain.reconstruction import ReconstructionView
 from app.domain.scene import Placement, SceneV1
 
 SessionStatus = Literal[
@@ -40,6 +41,7 @@ class SessionView(BaseModel):
     placement: Placement | None = None
     renders: list[RenderView] = []
     error: SessionError | None = None
+    reconstruction: ReconstructionView | None = None
 
 
 class SessionCreated(BaseModel):
@@ -51,7 +53,7 @@ class Capabilities(BaseModel):
     product_ai: bool
     style_render: bool
     scene_builder: str
-    reconstruction: Literal["assisted"] = "assisted"
+    reconstruction: Literal["assisted", "photo_assisted"] = "assisted"
     max_photos: int
     min_photos: int
     assistant: bool = False

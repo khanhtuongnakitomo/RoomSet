@@ -200,12 +200,19 @@ def test_warm_returns_at_once_and_only_once_a_minute(client, monkeypatch):
     settings = get_settings()
     monkeypatch.setattr(settings, "baseten_api", "k")
     monkeypatch.setattr(settings, "assemblyai_api", "a")
-    monkeypatch.setattr(assistant, "_last_warm", 0.0)
-    started = []
-    monkeypatch.setattr(assistant, "_warm_providers", lambda: started.append(1))
-    assert client.post("/api/assistant/warm").status_code == 204
-    assert client.post("/api/assistant/warm").status_code == 204
-    import time
+    import threading
 
-    time.sleep(0.05)
+    monkeypatch.setattr(assistant, "_last_warm", None)
+    monkeypatch.setattr(assistant, "_warm_clock", lambda: 10.0)
+    signaled = threading.Event()
+    started = []
+
+    def warmed():
+        started.append(1)
+        signaled.set()
+
+    monkeypatch.setattr(assistant, "_warm_providers", warmed)
+    assert client.post("/api/assistant/warm").status_code == 204
+    assert client.post("/api/assistant/warm").status_code == 204
+    assert signaled.wait(timeout=2)
     assert started == [1]
